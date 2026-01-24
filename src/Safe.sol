@@ -81,6 +81,7 @@ library Safe {
         i.urls[11155111] = "https://api.safe.global/tx-service/sep/api";
         i.urls[1313161554] = "https://api.safe.global/tx-service/aurora/api";
         i.urls[1868] = "https://trx-soneium.safe.protofire.io/api";
+        i.urls[5888] = "https://transaction-mantra.safe.protofire.io/api";
 
         // https://github.com/safe-global/safe-deployments/blob/v1.37.32/src/assets/v1.3.0/multi_send_call_only.json
         i.multiSendCallOnly[1] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
@@ -105,6 +106,7 @@ library Safe {
         i.multiSendCallOnly[11155111] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
         i.multiSendCallOnly[1313161554] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
         i.multiSendCallOnly[1868] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
+        i.multiSendCallOnly[5888] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
 
         i.http.initialize().withHeader("Content-Type", "application/json").withFollowRedirects(true);
         return self;
