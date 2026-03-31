@@ -114,6 +114,11 @@ library Safe {
         i.multiSendCallOnly[1313161554] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
         i.multiSendCallOnly[1868] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
         i.multiSendCallOnly[5888] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
+        i.multiSendCallOnly[16661] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
+        i.multiSendCallOnly[4114] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
+        i.multiSendCallOnly[1329] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
+        i.multiSendCallOnly[9745] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
+        i.multiSendCallOnly[2288] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
 
         i.http.initialize().withHeader("Content-Type", "application/json").withFollowRedirects(true);
         return self;
