@@ -81,8 +81,13 @@ library Safe {
         i.urls[534352] = "https://api.safe.global/tx-service/scr/api";
         i.urls[11155111] = "https://api.safe.global/tx-service/sep/api";
         i.urls[1313161554] = "https://api.safe.global/tx-service/aurora/api";
+        i.urls[16661] = "https://api.safe.global/tx-service/0g/api";
         i.urls[1868] = "https://trx-soneium.safe.protofire.io/api";
         i.urls[5888] = "https://transaction-mantra.safe.protofire.io/api";
+        i.urls[4114] = "https://transaction.safe.citrea.xyz/api";
+        i.urls[1329] = "https://transaction.sei-safe.protofire.io/api";
+        i.urls[9745] = "https://transaction-plasma.safe.protofire.io/api";
+        i.urls[2288] = "https://transaction-mocachain.safe.protofire.io/api";
 
         // https://github.com/safe-global/safe-deployments/blob/v1.37.32/src/assets/v1.3.0/multi_send_call_only.json
         i.multiSendCallOnly[1] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
