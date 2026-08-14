@@ -16,6 +16,15 @@ library Safe {
     string constant SAFE_TRANSACTION_SERVICE_BASE_URL = "https://api.safe.global/tx-service";
     string constant PLUME_TRANSACTION_SERVICE_URL = "https://safe-transaction-plume.onchainden.com/api";
 
+    // Chains absent from safe-core-sdk's `networks` list, so they cannot be resolved through
+    // `getNetworkShortName`. Each host was confirmed to answer `200` on `/api/v1/about/`.
+    // Fluent is served by Safe's own infrastructure but is likewise not in the SDK config yet.
+    string constant SEI_TRANSACTION_SERVICE_URL = "https://transaction.sei-safe.protofire.io/api";
+    string constant SONEIUM_TRANSACTION_SERVICE_URL = "https://transaction-soneium.safe.protofire.io/api";
+    string constant MOCA_TRANSACTION_SERVICE_URL = "https://transaction-mocachain.safe.protofire.io/api";
+    string constant CITREA_TRANSACTION_SERVICE_URL = "https://transaction.safe.citrea.xyz/api";
+    string constant FLUENT_TRANSACTION_SERVICE_URL = "https://api.safe.global/tx-service/fluent/api";
+
     // https://github.com/safe-global/safe-smart-account/blob/release/v1.4.1/contracts/libraries/SafeStorage.sol
     bytes32 constant SAFE_THRESHOLD_STORAGE_SLOT = bytes32(uint256(4));
 
@@ -76,6 +85,21 @@ library Safe {
     function getApiKitUrl(Client storage, uint256 chainId) internal pure returns (string memory) {
         if (chainId == 98866) {
             return PLUME_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 1329) {
+            return SEI_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 1868) {
+            return SONEIUM_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 2288) {
+            return MOCA_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 4114) {
+            return CITREA_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 25363) {
+            return FLUENT_TRANSACTION_SERVICE_URL;
         }
         return getTransactionServiceUrl(chainId);
     }
@@ -158,8 +182,15 @@ library Safe {
     }
 
     function _usesV141CanonicalMultiSend(uint256 chainId) private pure returns (bool) {
-        return (chainId == 50 || chainId == 143 || chainId == 146 || chainId == 204 || chainId == 988 || chainId == 3338
-                || chainId == 3637 || chainId == 9745 || chainId == 10143 || chainId == 16661 || chainId == 43111
+        // 1329 and 1868 are in safe-deployments and are covered by SafeDifferentialTest.
+        //
+        // 2288, 4114 and 25363 are not in safe-deployments, so nothing upstream can attest to them.
+        // The v1.4.1 canonical was confirmed present on each by `eth_getCode` against the chain's
+        // public RPC (2026-08-14); re-check if that address ever stops resolving. Citrea is why this
+        // cannot simply default to the v1.3.0 canonical — only v1.4.1 is deployed there.
+        return (chainId == 50 || chainId == 143 || chainId == 146 || chainId == 204 || chainId == 988 || chainId == 1329
+                || chainId == 1868 || chainId == 2288 || chainId == 3338 || chainId == 3637 || chainId == 4114
+                || chainId == 9745 || chainId == 10143 || chainId == 16661 || chainId == 25363 || chainId == 43111
                 || chainId == 57073 || chainId == 80069 || chainId == 80094 || chainId == 81224 || chainId == 747474);
     }
 
