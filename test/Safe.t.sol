@@ -3,13 +3,12 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Safe} from "../src/Safe.sol";
-import {strings} from "solidity-stringutils/strings.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {Enum} from "safe-smart-account/common/Enum.sol";
+import {SafeConfigFixtures} from "./helpers/SafeConfigFixtures.sol";
 
 contract SafeTest is Test {
     using Safe for *;
-    using strings for *;
 
     Safe.Client safe;
     address safeAddress = 0xF3a292Dda3F524EA20b5faF2EE0A1c4abA665e4F;
@@ -63,5 +62,77 @@ contract SafeTest is Test {
 
         // Propose transactions with the signature
         safe.proposeTransactionsWithSignature(targets, datas, foundrySigner1, signature);
+    }
+}
+
+contract SafeConfigTest is Test {
+    using Safe for *;
+
+    string constant SAFE_TRANSACTION_SERVICE_BASE_URL = "https://api.safe.global/tx-service";
+
+    Safe.Client safe;
+
+    function setUp() public {
+        safe.initialize(address(0xBEEF));
+    }
+
+    function test_Safe_getTransactionServiceUrl_matchesLatestOfficialSdkConfig() public pure {
+        (uint256[] memory chainIds, string[] memory shortNames) = SafeConfigFixtures.officialChains();
+
+        assertEq(chainIds.length, shortNames.length);
+        for (uint256 i = 0; i < chainIds.length; i++) {
+            assertEq(
+                Safe.getTransactionServiceUrl(chainIds[i]),
+                string.concat(SAFE_TRANSACTION_SERVICE_BASE_URL, "/", shortNames[i], "/api")
+            );
+        }
+    }
+
+    function test_Safe_getApiKitUrl_prefersThirdPartyOverrides() public view {
+        assertEq(safe.getApiKitUrl(98866), "https://safe-transaction-plume.onchainden.com/api");
+        assertEq(safe.getApiKitUrl(1329), "https://transaction.sei-safe.protofire.io/api");
+        assertEq(safe.getApiKitUrl(1868), "https://transaction-soneium.safe.protofire.io/api");
+        assertEq(safe.getApiKitUrl(2288), "https://transaction-mocachain.safe.protofire.io/api");
+        assertEq(safe.getApiKitUrl(4114), "https://transaction.safe.citrea.xyz/api");
+        assertEq(safe.getApiKitUrl(25363), "https://api.safe.global/tx-service/fluent/api");
+    }
+
+    /// @dev Moca, Citrea and Fluent have no safe-deployments record, so SafeDifferentialTest cannot
+    ///      reach them. Their addresses come from an `eth_getCode` check against each chain's public
+    ///      RPC; this pins that result so a regression is caught here rather than at execution time.
+    ///      Citrea is the case that matters: only the v1.4.1 canonical exists there.
+    function test_Safe_getMultiSendCallOnly_resolvesChainsAbsentFromSafeDeployments() public view {
+        address v141Canonical = 0x9641d764fc13c8B624c04430C7356C1C7C8102e2;
+
+        assertEq(address(safe.getMultiSendCallOnly(2288)), v141Canonical);
+        assertEq(address(safe.getMultiSendCallOnly(4114)), v141Canonical);
+        assertEq(address(safe.getMultiSendCallOnly(25363)), v141Canonical);
+    }
+
+    function test_Safe_getApiKitUrl_revertsForUnknownChain() public {
+        vm.expectRevert(abi.encodeWithSelector(Safe.ApiKitUrlNotFound.selector, 31337));
+        this.exposedGetApiKitUrl(31337);
+    }
+
+    function test_Safe_getMultiSendCallOnly_resolvesLegacyAndNewDeployments() public view {
+        (uint256[] memory chainIds, address[] memory expected) = SafeConfigFixtures.multiSendChains();
+
+        assertEq(chainIds.length, expected.length);
+        for (uint256 i = 0; i < chainIds.length; i++) {
+            assertEq(address(safe.getMultiSendCallOnly(chainIds[i])), expected[i]);
+        }
+    }
+
+    function test_Safe_getMultiSendCallOnly_revertsForUnknownChain() public {
+        vm.expectRevert(abi.encodeWithSelector(Safe.MultiSendCallOnlyNotFound.selector, 31337));
+        this.exposedGetMultiSendCallOnly(31337);
+    }
+
+    function exposedGetApiKitUrl(uint256 chainId) external view returns (string memory) {
+        return safe.getApiKitUrl(chainId);
+    }
+
+    function exposedGetMultiSendCallOnly(uint256 chainId) external view returns (address) {
+        return address(safe.getMultiSendCallOnly(chainId));
     }
 }
