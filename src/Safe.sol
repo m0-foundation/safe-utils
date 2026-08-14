@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Vm, VmSafe} from "forge-std/Vm.sol";
+import {console} from "forge-std/console.sol";
 import {HTTP} from "solidity-http/HTTP.sol";
 import {MultiSendCallOnly} from "safe-smart-account/libraries/MultiSendCallOnly.sol";
 import {Enum} from "safe-smart-account/common/Enum.sol";
@@ -12,14 +13,21 @@ library Safe {
 
     /// forge-lint: disable-next-line(screaming-snake-case-const)
     Vm constant vm = Vm(address(bytes20(uint160(uint256(keccak256("hevm cheat code"))))));
+    string constant SAFE_TRANSACTION_SERVICE_BASE_URL = "https://api.safe.global/tx-service";
+    string constant PLUME_TRANSACTION_SERVICE_URL = "https://safe-transaction-plume.onchainden.com/api";
 
     // https://github.com/safe-global/safe-smart-account/blob/release/v1.4.1/contracts/libraries/SafeStorage.sol
     bytes32 constant SAFE_THRESHOLD_STORAGE_SLOT = bytes32(uint256(4));
 
-    // https://github.com/safe-global/safe-deployments/blob/v1.37.32/src/assets/v1.3.0/multi_send_call_only.json
-    address constant MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL = 0x40A2aCCbd92BCA938b02010E17A5b8929b49130D;
-    address constant MULTI_SEND_CALL_ONLY_ADDRESS_EIP155 = 0xA1dabEF33b3B82c7814B6D82A79e50F4AC44102B;
-    address constant MULTI_SEND_CALL_ONLY_ADDRESS_ZKSYNC = 0xf220D3b4DFb23C4ade8C88E526C1353AbAcbC38F;
+    // https://github.com/safe-global/safe-deployments/blob/c6a2025fca317b629d73d24b472c266418e2a4d6/src/assets/v1.3.0/multi_send_call_only.json
+    address constant MULTI_SEND_CALL_ONLY_ADDRESS_V130_CANONICAL = 0x40A2aCCbd92BCA938b02010E17A5b8929b49130D;
+    address constant MULTI_SEND_CALL_ONLY_ADDRESS_V130_ZKSYNC = 0xf220D3b4DFb23C4ade8C88E526C1353AbAcbC38F;
+    // https://github.com/safe-global/safe-deployments/blob/c6a2025fca317b629d73d24b472c266418e2a4d6/src/assets/v1.4.1/multi_send_call_only.json
+    address constant MULTI_SEND_CALL_ONLY_ADDRESS_V141_CANONICAL = 0x9641d764fc13c8B624c04430C7356C1C7C8102e2;
+    address constant MULTI_SEND_CALL_ONLY_ADDRESS_V141_ZKSYNC = 0x0408EF011960d02349d50286D20531229BCef773;
+
+    // https://github.com/safe-global/safe-smart-account/blob/release/v1.4.1/contracts/libraries/SafeStorage.sol
+    uint256 constant SAFE_APPROVED_HASHES_SLOT = 8;
 
     error ApiKitUrlNotFound(uint256 chainId);
     error MultiSendCallOnlyNotFound(uint256 chainId);
@@ -29,8 +37,6 @@ library Safe {
     struct Instance {
         address safe;
         HTTP.Client http;
-        mapping(uint256 chainId => string) urls;
-        mapping(uint256 chainId => MultiSendCallOnly) multiSendCallOnly;
         string requestBody;
     }
 
@@ -58,58 +64,6 @@ library Safe {
         self.instances.push();
         Instance storage i = self.instances[self.instances.length - 1];
         i.safe = safe;
-        // https://github.com/safe-global/safe-core-sdk/blob/4d89cb9b1559e4349c323a48a10caf685f7f8c88/packages/api-kit/src/utils/config.ts
-        i.urls[1] = "https://api.safe.global/tx-service/eth/api";
-        i.urls[10] = "https://api.safe.global/tx-service/oeth/api";
-        i.urls[56] = "https://api.safe.global/tx-service/bnb/api";
-        i.urls[100] = "https://api.safe.global/tx-service/gno/api";
-        i.urls[130] = "https://api.safe.global/tx-service/unichain/api";
-        i.urls[137] = "https://api.safe.global/tx-service/pol/api";
-        i.urls[196] = "https://api.safe.global/tx-service/okb/api";
-        i.urls[324] = "https://api.safe.global/tx-service/zksync/api";
-        i.urls[480] = "https://api.safe.global/tx-service/wc/api";
-        i.urls[999] = "https://api.safe.global/tx-service/hyper/api";
-        i.urls[1101] = "https://api.safe.global/tx-service/zkevm/api";
-        i.urls[5000] = "https://api.safe.global/tx-service/mantle/api";
-        i.urls[8453] = "https://api.safe.global/tx-service/base/api";
-        i.urls[42161] = "https://api.safe.global/tx-service/arb1/api";
-        i.urls[42220] = "https://api.safe.global/tx-service/celo/api";
-        i.urls[43114] = "https://api.safe.global/tx-service/avax/api";
-        i.urls[59144] = "https://api.safe.global/tx-service/linea/api";
-        i.urls[84532] = "https://api.safe.global/tx-service/basesep/api";
-        i.urls[98866] = "https://safe-transaction-plume.onchainden.com/api";
-        i.urls[534352] = "https://api.safe.global/tx-service/scr/api";
-        i.urls[11155111] = "https://api.safe.global/tx-service/sep/api";
-        i.urls[1313161554] = "https://api.safe.global/tx-service/aurora/api";
-        i.urls[1868] = "https://trx-soneium.safe.protofire.io/api";
-        i.urls[5888] = "https://transaction-mantra.safe.protofire.io/api";
-
-        // https://github.com/safe-global/safe-deployments/blob/v1.37.32/src/assets/v1.3.0/multi_send_call_only.json
-        i.multiSendCallOnly[1] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[10] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[56] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[100] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[130] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[137] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[196] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[324] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_ZKSYNC);
-        i.multiSendCallOnly[480] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[999] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[1101] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[5000] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[8453] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[42161] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[42220] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[43114] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[59144] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[84532] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[98866] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[534352] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[11155111] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[1313161554] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[1868] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-        i.multiSendCallOnly[5888] = MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_CANONICAL);
-
         i.http.initialize().withHeader("Content-Type", "application/json").withFollowRedirects(true);
         return self;
     }
@@ -118,24 +72,116 @@ library Safe {
         return self.instances[self.instances.length - 1];
     }
 
-    function getApiKitUrl(Client storage self, uint256 chainId) internal view returns (string memory) {
-        string memory url = instance(self).urls[chainId];
-        if (bytes(url).length == 0) {
-            revert ApiKitUrlNotFound(chainId);
+    // Keep the first Client parameter so existing `using Safe for *` call sites remain unchanged.
+    function getApiKitUrl(Client storage, uint256 chainId) internal pure returns (string memory) {
+        if (chainId == 98866) {
+            return PLUME_TRANSACTION_SERVICE_URL;
         }
-        return url;
+        return getTransactionServiceUrl(chainId);
     }
 
-    function getMultiSendCallOnly(Client storage self, uint256 chainId) internal view returns (MultiSendCallOnly) {
-        MultiSendCallOnly multiSendCallOnly = instance(self).multiSendCallOnly[chainId];
-        if (address(multiSendCallOnly) == address(0)) {
-            revert MultiSendCallOnlyNotFound(chainId);
+    // Mirrors safe-global/safe-core-sdk/packages/api-kit/src/utils/config.ts on main.
+    function getNetworkShortName(uint256 chainId) internal pure returns (string memory) {
+        if (chainId == 1) return "eth";
+        if (chainId == 10) return "oeth";
+        if (chainId == 50) return "xdc";
+        if (chainId == 56) return "bnb";
+        if (chainId == 100) return "gno";
+        if (chainId == 130) return "unichain";
+        if (chainId == 137) return "pol";
+        if (chainId == 143) return "monad";
+        if (chainId == 146) return "sonic";
+        if (chainId == 196) return "okb";
+        if (chainId == 204) return "opbnb";
+        if (chainId == 232) return "lens";
+        if (chainId == 324) return "zksync";
+        if (chainId == 480) return "wc";
+        if (chainId == 988) return "stable";
+        if (chainId == 999) return "hyper";
+        if (chainId == 1101) return "zkevm";
+        if (chainId == 3338) return "peaq";
+        if (chainId == 3637) return "btc";
+        if (chainId == 5000) return "mantle";
+        if (chainId == 8453) return "base";
+        if (chainId == 9745) return "plasma";
+        if (chainId == 10143) return "monad-testnet";
+        if (chainId == 10200) return "chi";
+        if (chainId == 16661) return "0g";
+        if (chainId == 42161) return "arb1";
+        if (chainId == 42220) return "celo";
+        if (chainId == 43111) return "hemi";
+        if (chainId == 43114) return "avax";
+        if (chainId == 57073) return "ink";
+        if (chainId == 59144) return "linea";
+        if (chainId == 80069) return "bep";
+        if (chainId == 80094) return "berachain";
+        if (chainId == 81224) return "codex";
+        if (chainId == 84532) return "basesep";
+        if (chainId == 534352) return "scr";
+        if (chainId == 747474) return "katana";
+        if (chainId == 11155111) return "sep";
+        if (chainId == 1313161554) return "aurora";
+        revert ApiKitUrlNotFound(chainId);
+    }
+
+    function getTransactionServiceUrl(uint256 chainId) internal pure returns (string memory) {
+        return string.concat(SAFE_TRANSACTION_SERVICE_BASE_URL, "/", getNetworkShortName(chainId), "/api");
+    }
+
+    // Keep the first Client parameter so existing `using Safe for *` call sites remain unchanged.
+    function getMultiSendCallOnly(Client storage, uint256 chainId) internal pure returns (MultiSendCallOnly) {
+        if (chainId == 98866) {
+            return MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_V141_CANONICAL);
         }
-        return multiSendCallOnly;
+        if (chainId == 324) {
+            return MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_V130_ZKSYNC);
+        }
+        // safe-deployments registers Lens against the zkSync deployment in both v1.3.0 and v1.4.1.
+        if (chainId == 232) {
+            return MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_V141_ZKSYNC);
+        }
+        if (_usesV141CanonicalMultiSend(chainId)) {
+            return MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_V141_CANONICAL);
+        }
+        if (_usesV130CanonicalMultiSend(chainId)) {
+            return MultiSendCallOnly(MULTI_SEND_CALL_ONLY_ADDRESS_V130_CANONICAL);
+        }
+        revert MultiSendCallOnlyNotFound(chainId);
+    }
+
+    function _usesV130CanonicalMultiSend(uint256 chainId) private pure returns (bool) {
+        return (chainId == 1 || chainId == 10 || chainId == 56 || chainId == 100 || chainId == 130 || chainId == 137
+                || chainId == 196 || chainId == 480 || chainId == 999 || chainId == 1101 || chainId == 5000
+                || chainId == 8453 || chainId == 10200 || chainId == 42161 || chainId == 42220 || chainId == 43114
+                || chainId == 59144 || chainId == 84532 || chainId == 534352 || chainId == 11155111
+                || chainId == 1313161554);
+    }
+
+    function _usesV141CanonicalMultiSend(uint256 chainId) private pure returns (bool) {
+        return (chainId == 50 || chainId == 143 || chainId == 146 || chainId == 204 || chainId == 988 || chainId == 3338
+                || chainId == 3637 || chainId == 9745 || chainId == 10143 || chainId == 16661 || chainId == 43111
+                || chainId == 57073 || chainId == 80069 || chainId == 80094 || chainId == 81224 || chainId == 747474);
     }
 
     function getNonce(Client storage self) internal view returns (uint256) {
         return ISafeSmartAccount(instance(self).safe).nonce();
+    }
+
+    /// @notice Returns true when the script is running with --broadcast
+    /// @dev    SAFE_BROADCAST env var takes precedence, useful for testing or
+    ///         environments where vm.isContext is unavailable.
+    function isBroadcastMode() internal view returns (bool) {
+        if (vm.envOr("SAFE_BROADCAST", false)) return true;
+        try vm.isContext(VmSafe.ForgeContext.ScriptBroadcast) returns (bool isBroadcast) {
+            return isBroadcast;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @notice Returns true when the script is running without --broadcast (dry-run / simulation)
+    function isSimulationMode() internal view returns (bool) {
+        return !isBroadcastMode();
     }
 
     function getSafeTxHash(
@@ -148,6 +194,217 @@ library Safe {
     ) internal view returns (bytes32) {
         return ISafeSmartAccount(instance(self).safe)
             .getTransactionHash(to, value, data, operation, 0, 0, 0, address(0), address(0), nonce);
+    }
+
+    // =========================================================================
+    // Simulation
+    // =========================================================================
+
+    /// @notice Execute a pre-built transaction against the Safe on a local fork
+    /// @dev    Caller is responsible for setting params.signature before calling.
+    ///         Use simulateTransactionNoSign for the common case where no real
+    ///         signature is needed.
+    function simulateTransaction(Client storage self, ExecTransactionParams memory params) internal returns (bool) {
+        address safeAddress = instance(self).safe;
+        console.log("[safe-utils] simulating to %s (nonce %d)", params.to, params.nonce);
+        /// forge-lint: disable-next-line(unsafe-cheatcode)
+        vm.prank(params.sender);
+        try ISafeSmartAccount(safeAddress)
+            .execTransaction(
+                params.to,
+                params.value,
+                params.data,
+                params.operation,
+                0,
+                0,
+                0,
+                address(0),
+                payable(0),
+                params.signature
+            ) returns (
+            bool ok
+        ) {
+            if (ok) {
+                console.log("[safe-utils] simulation succeeded");
+                return true;
+            }
+            console.log("[safe-utils] simulation failed: execTransaction returned false");
+            return false;
+        } catch (bytes memory revertData) {
+            console.log("[safe-utils] simulation reverted");
+            if (revertData.length > 0) {
+                console.logBytes(revertData);
+            }
+            return false;
+        }
+    }
+
+    /// @notice Simulate a single Call transaction without a hardware wallet
+    /// @dev    Writes 1 to approvedHashes[sender][txHash] via vm.store so the Safe
+    ///         accepts the synthetic approved-hash signature (r=sender, s=0, v=1).
+    function simulateTransactionNoSign(Client storage self, address to, bytes memory data, address sender)
+        internal
+        returns (bool)
+    {
+        return simulateTransactionNoSign(self, to, data, Enum.Operation.Call, sender);
+    }
+
+    /// @notice Simulate a transaction without a hardware wallet, with explicit operation type
+    function simulateTransactionNoSign(
+        Client storage self,
+        address to,
+        bytes memory data,
+        Enum.Operation operation,
+        address sender
+    ) internal returns (bool) {
+        uint256 nonce = getNonce(self);
+        address safeAddress = instance(self).safe;
+        bytes32 txHash = getSafeTxHash(self, to, 0, data, operation, nonce);
+        bytes32 ownerSlot = keccak256(abi.encode(sender, SAFE_APPROVED_HASHES_SLOT));
+        bytes32 approvalSlot = keccak256(abi.encode(txHash, ownerSlot));
+        /// forge-lint: disable-next-line(unsafe-cheatcode)
+        vm.store(safeAddress, approvalSlot, bytes32(uint256(1)));
+        // Approved-hash signature format: r=owner (padded), s=0, v=1
+        bytes memory signature = abi.encodePacked(bytes32(uint256(uint160(sender))), bytes32(0), uint8(1));
+        return simulateTransaction(
+            self,
+            ExecTransactionParams({
+                to: to, value: 0, data: data, operation: operation, sender: sender, signature: signature, nonce: nonce
+            })
+        );
+    }
+
+    /// @notice Simulate a batch of transactions via MultiSend without a hardware wallet
+    function simulateTransactionsNoSign(
+        Client storage self,
+        address[] memory targets,
+        bytes[] memory datas,
+        address sender
+    ) internal returns (bool) {
+        (address to, bytes memory data) = getProposeTransactionsTargetAndData(self, targets, datas);
+        uint256 nonce = getNonce(self);
+        address safeAddress = instance(self).safe;
+        bytes32 txHash = getSafeTxHash(self, to, 0, data, Enum.Operation.DelegateCall, nonce);
+        bytes32 ownerSlot = keccak256(abi.encode(sender, SAFE_APPROVED_HASHES_SLOT));
+        bytes32 approvalSlot = keccak256(abi.encode(txHash, ownerSlot));
+        /// forge-lint: disable-next-line(unsafe-cheatcode)
+        vm.store(safeAddress, approvalSlot, bytes32(uint256(1)));
+        bytes memory signature = abi.encodePacked(bytes32(uint256(uint160(sender))), bytes32(0), uint8(1));
+        return simulateTransaction(
+            self,
+            ExecTransactionParams({
+                to: to,
+                value: 0,
+                data: data,
+                operation: Enum.Operation.DelegateCall,
+                sender: sender,
+                signature: signature,
+                nonce: nonce
+            })
+        );
+    }
+
+    /// @notice Simulate a single transaction with a multi-sig Safe (threshold > 1) without hardware wallets
+    /// @dev    Signers are sorted ascending as required by Safe's checkNSignatures.
+    ///         Non-owners and duplicates are filtered out; provide at least `threshold` unique valid owners.
+    function simulateTransactionMultiSigNoSign(
+        Client storage self,
+        address to,
+        bytes memory data,
+        address[] memory signers
+    ) internal returns (bool) {
+        return _simulateMultiSig(self, to, data, Enum.Operation.Call, signers);
+    }
+
+    /// @notice Simulate a batch of transactions with a multi-sig Safe without hardware wallets
+    /// @dev    Signers are sorted ascending as required by Safe's checkNSignatures.
+    ///         Non-owners and duplicates are filtered out; provide at least `threshold` unique valid owners.
+    function simulateTransactionsMultiSigNoSign(
+        Client storage self,
+        address[] memory targets,
+        bytes[] memory datas,
+        address[] memory signers
+    ) internal returns (bool) {
+        (address to, bytes memory data) = getProposeTransactionsTargetAndData(self, targets, datas);
+        return _simulateMultiSig(self, to, data, Enum.Operation.DelegateCall, signers);
+    }
+
+    function _simulateMultiSig(
+        Client storage self,
+        address to,
+        bytes memory data,
+        Enum.Operation operation,
+        address[] memory signers
+    ) private returns (bool) {
+        if (signers.length == 0) {
+            console.log("[safe-utils] simulation failed: no signers provided");
+            return false;
+        }
+        address safeAddress = instance(self).safe;
+        // Filter to actual Safe owners. Safe's checkNSignatures only validates the first
+        // `threshold` signatures (post-sort) and rejects non-owners with GS026, so a
+        // low-address non-owner could otherwise poison the prefix and break simulation.
+        address[] memory validOwners = _filterOwners(safeAddress, signers);
+        if (validOwners.length == 0) {
+            console.log("[safe-utils] simulation failed: no valid owners in signers");
+            return false;
+        }
+        uint256 nonce = getNonce(self);
+        bytes32 txHash = getSafeTxHash(self, to, 0, data, operation, nonce);
+        address[] memory sorted = _sortAddresses(validOwners);
+        bytes memory signatures;
+        // Skip duplicates: Safe's checkNSignatures requires strictly ascending owners,
+        // so a repeated address (e.g. typo in SIGNER_ADDRESS_*) would otherwise fail.
+        // address(0) is never a valid Safe owner, so the initial value is safe.
+        address lastSigner = address(0);
+        for (uint256 i; i < sorted.length; i++) {
+            if (sorted[i] == lastSigner) continue;
+            bytes32 ownerSlot = keccak256(abi.encode(sorted[i], SAFE_APPROVED_HASHES_SLOT));
+            bytes32 approvalSlot = keccak256(abi.encode(txHash, ownerSlot));
+            /// forge-lint: disable-next-line(unsafe-cheatcode)
+            vm.store(safeAddress, approvalSlot, bytes32(uint256(1)));
+            signatures = abi.encodePacked(signatures, bytes32(uint256(uint160(sorted[i]))), bytes32(0), uint8(1));
+            lastSigner = sorted[i];
+        }
+        return simulateTransaction(
+            self,
+            ExecTransactionParams({
+                to: to,
+                value: 0,
+                data: data,
+                operation: operation,
+                sender: sorted[0],
+                signature: signatures,
+                nonce: nonce
+            })
+        );
+    }
+
+    /// @dev Return only the addresses in `signers` that are current owners of the Safe.
+    function _filterOwners(address safeAddress, address[] memory signers) private view returns (address[] memory) {
+        address[] memory tmp = new address[](signers.length);
+        uint256 count;
+        for (uint256 i; i < signers.length; i++) {
+            if (ISafeSmartAccount(safeAddress).isOwner(signers[i])) {
+                tmp[count++] = signers[i];
+            }
+        }
+        address[] memory result = new address[](count);
+        for (uint256 i; i < count; i++) {
+            result[i] = tmp[i];
+        }
+        return result;
+    }
+
+    /// @dev Bubble-sort signers ascending. Safe requires signatures ordered by signer address.
+    function _sortAddresses(address[] memory arr) private pure returns (address[] memory) {
+        uint256 n = arr.length;
+        for (uint256 i; i < n; i++) {
+            for (uint256 j = i + 1; j < n; j++) {
+                if (uint160(arr[i]) > uint160(arr[j])) (arr[i], arr[j]) = (arr[j], arr[i]);
+            }
+        }
+        return arr;
     }
 
     // https://github.com/safe-global/safe-core-sdk/blob/r60/packages/api-kit/src/SafeApiKit.ts#L574
@@ -247,6 +504,32 @@ library Safe {
         return txHash;
     }
 
+    /// @notice Propose a transaction with a precomputed signature and an explicit nonce
+    /// @dev    Use this when proposing multiple transactions in one script run to avoid
+    ///         nonce collisions — the Safe's on-chain nonce only advances on execution,
+    ///         so sequential proposes must supply an incrementing nonce manually.
+    function proposeTransactionWithSignature(
+        Client storage self,
+        address to,
+        bytes memory data,
+        address sender,
+        bytes memory signature,
+        uint256 nonce
+    ) internal returns (bytes32 txHash) {
+        txHash = proposeTransaction(
+            self,
+            ExecTransactionParams({
+                to: to,
+                value: 0,
+                data: data,
+                operation: Enum.Operation.Call,
+                sender: sender,
+                signature: signature,
+                nonce: nonce
+            })
+        );
+    }
+
     function getProposeTransactionsTargetAndData(Client storage self, address[] memory targets, bytes[] memory datas)
         internal
         view
@@ -326,6 +609,31 @@ library Safe {
         });
         txHash = proposeTransaction(self, params);
         return txHash;
+    }
+
+    /// @notice Propose multiple transactions with a precomputed signature and an explicit nonce
+    /// @dev    Same nonce rationale as proposeTransactionWithSignature(..., nonce).
+    function proposeTransactionsWithSignature(
+        Client storage self,
+        address[] memory targets,
+        bytes[] memory datas,
+        address sender,
+        bytes memory signature,
+        uint256 nonce
+    ) internal returns (bytes32 txHash) {
+        (address to, bytes memory data) = getProposeTransactionsTargetAndData(self, targets, datas);
+        txHash = proposeTransaction(
+            self,
+            ExecTransactionParams({
+                to: to,
+                value: 0,
+                data: data,
+                operation: Enum.Operation.DelegateCall,
+                sender: sender,
+                signature: signature,
+                nonce: nonce
+            })
+        );
     }
 
     function getExecTransactionData(Client storage self, address to, bytes memory data, address sender)
@@ -424,6 +732,28 @@ library Safe {
         string memory derivationPath
     ) internal returns (bytes memory) {
         if (bytes(derivationPath).length > 0) {
+            // Hardware wallet selection via HARDWARE_WALLET env var (defaults to ledger)
+            string memory hardwareWallet = vm.envOr("HARDWARE_WALLET", string("ledger"));
+            if (keccak256(bytes(hardwareWallet)) == keccak256(bytes("trezor"))) {
+                // Trezor signs the raw safeTxHash: `cast wallet sign` does not support
+                // EIP-712 --data with --trezor, so we must pass the hash as the message.
+                bytes32 safeTxHash = getSafeTxHash(self, to, 0, data, operation, nonce);
+                string[] memory trezorInputs = new string[](7);
+                trezorInputs[0] = "cast";
+                trezorInputs[1] = "wallet";
+                trezorInputs[2] = "sign";
+                trezorInputs[3] = "--trezor";
+                trezorInputs[4] = "--mnemonic-derivation-path";
+                trezorInputs[5] = derivationPath;
+                trezorInputs[6] = vm.toString(safeTxHash);
+                /// forge-lint: disable-next-line(unsafe-cheatcode)
+                bytes memory trezorOutput = vm.ffi(trezorInputs);
+                // Trezor uses eth_sign, which prepends "\x19Ethereum Signed Message:\n32"
+                // to the hash. Safe's checkNSignatures detects this via v >= 31, so add 4.
+                trezorOutput[64] = bytes1(uint8(trezorOutput[64]) + 4);
+                return trezorOutput;
+            }
+
             string[] memory inputs = new string[](8);
             inputs[0] = "cast";
             inputs[1] = "wallet";
