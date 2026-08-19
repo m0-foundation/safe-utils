@@ -24,6 +24,9 @@ library Safe {
     string constant MOCA_TRANSACTION_SERVICE_URL = "https://transaction-mocachain.safe.protofire.io/api";
     string constant CITREA_TRANSACTION_SERVICE_URL = "https://transaction.safe.citrea.xyz/api";
     string constant FLUENT_TRANSACTION_SERVICE_URL = "https://api.safe.global/tx-service/fluent/api";
+    string constant MANTRA_TRANSACTION_SERVICE_URL = "https://transaction.safe.mantracha.in/api";
+    string constant NEXUS_TRANSACTION_SERVICE_URL = "https://prod.nexus.keypersafe.xyz/api";
+    string constant RISE_TRANSACTION_SERVICE_URL = "https://multisig-txs.risechain.com/api";
 
     // https://github.com/safe-global/safe-smart-account/blob/release/v1.4.1/contracts/libraries/SafeStorage.sol
     bytes32 constant SAFE_THRESHOLD_STORAGE_SLOT = bytes32(uint256(4));
@@ -95,8 +98,17 @@ library Safe {
         if (chainId == 2288) {
             return MOCA_TRANSACTION_SERVICE_URL;
         }
+        if (chainId == 3946) {
+            return NEXUS_TRANSACTION_SERVICE_URL;
+        }
         if (chainId == 4114) {
             return CITREA_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 4153) {
+            return RISE_TRANSACTION_SERVICE_URL;
+        }
+        if (chainId == 5888) {
+            return MANTRA_TRANSACTION_SERVICE_URL;
         }
         if (chainId == 25363) {
             return FLUENT_TRANSACTION_SERVICE_URL;
@@ -182,16 +194,18 @@ library Safe {
     }
 
     function _usesV141CanonicalMultiSend(uint256 chainId) private pure returns (bool) {
-        // 1329 and 1868 are in safe-deployments and are covered by SafeDifferentialTest.
+        // 1329, 1868, 4153 and 5888 are in safe-deployments and are covered by SafeDifferentialTest.
         //
-        // 2288, 4114 and 25363 are not in safe-deployments, so nothing upstream can attest to them.
-        // The v1.4.1 canonical was confirmed present on each by `eth_getCode` against the chain's
-        // public RPC (2026-08-14); re-check if that address ever stops resolving. Citrea is why this
-        // cannot simply default to the v1.3.0 canonical — only v1.4.1 is deployed there.
+        // 2288, 3946, 4114 and 25363 are not in safe-deployments, so nothing upstream can attest to
+        // them. The v1.4.1 canonical was confirmed present on each by `eth_getCode` against the
+        // chain's public RPC (2288/4114/25363 on 2026-08-14, 3946 on 2026-08-19); re-check if that
+        // address ever stops resolving. Citrea is why this cannot simply default to the v1.3.0
+        // canonical — only v1.4.1 is deployed there.
         return (chainId == 50 || chainId == 143 || chainId == 146 || chainId == 204 || chainId == 988 || chainId == 1329
-                || chainId == 1868 || chainId == 2288 || chainId == 3338 || chainId == 3637 || chainId == 4114
-                || chainId == 9745 || chainId == 10143 || chainId == 16661 || chainId == 25363 || chainId == 43111
-                || chainId == 57073 || chainId == 80069 || chainId == 80094 || chainId == 81224 || chainId == 747474);
+                || chainId == 1868 || chainId == 2288 || chainId == 3338 || chainId == 3637 || chainId == 3946
+                || chainId == 4114 || chainId == 4153 || chainId == 5888 || chainId == 9745 || chainId == 10143
+                || chainId == 16661 || chainId == 25363 || chainId == 43111 || chainId == 57073 || chainId == 80069
+                || chainId == 80094 || chainId == 81224 || chainId == 747474);
     }
 
     function getNonce(Client storage self) internal view returns (uint256) {
