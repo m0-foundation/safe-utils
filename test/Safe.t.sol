@@ -93,18 +93,22 @@ contract SafeConfigTest is Test {
         assertEq(safe.getApiKitUrl(1329), "https://transaction.sei-safe.protofire.io/api");
         assertEq(safe.getApiKitUrl(1868), "https://transaction-soneium.safe.protofire.io/api");
         assertEq(safe.getApiKitUrl(2288), "https://transaction-mocachain.safe.protofire.io/api");
+        assertEq(safe.getApiKitUrl(3946), "https://prod.nexus.keypersafe.xyz/api");
         assertEq(safe.getApiKitUrl(4114), "https://transaction.safe.citrea.xyz/api");
+        assertEq(safe.getApiKitUrl(4153), "https://multisig-txs.risechain.com/api");
+        assertEq(safe.getApiKitUrl(5888), "https://transaction.safe.mantracha.in/api");
         assertEq(safe.getApiKitUrl(25363), "https://api.safe.global/tx-service/fluent/api");
     }
 
-    /// @dev Moca, Citrea and Fluent have no safe-deployments record, so SafeDifferentialTest cannot
-    ///      reach them. Their addresses come from an `eth_getCode` check against each chain's public
-    ///      RPC; this pins that result so a regression is caught here rather than at execution time.
-    ///      Citrea is the case that matters: only the v1.4.1 canonical exists there.
+    /// @dev Moca, Nexus, Citrea and Fluent have no safe-deployments record, so SafeDifferentialTest
+    ///      cannot reach them. Their addresses come from an `eth_getCode` check against each chain's
+    ///      public RPC; this pins that result so a regression is caught here rather than at execution
+    ///      time. Citrea is the case that matters: only the v1.4.1 canonical exists there.
     function test_Safe_getMultiSendCallOnly_resolvesChainsAbsentFromSafeDeployments() public view {
         address v141Canonical = 0x9641d764fc13c8B624c04430C7356C1C7C8102e2;
 
         assertEq(address(safe.getMultiSendCallOnly(2288)), v141Canonical);
+        assertEq(address(safe.getMultiSendCallOnly(3946)), v141Canonical);
         assertEq(address(safe.getMultiSendCallOnly(4114)), v141Canonical);
         assertEq(address(safe.getMultiSendCallOnly(25363)), v141Canonical);
     }

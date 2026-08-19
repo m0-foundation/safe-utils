@@ -6,11 +6,12 @@ const MIN_EXPECTED_NETWORKS = 39;
 // Chains outside safe-core-sdk's `networks` list that safe-deployments still has a record for, so
 // this file stays a pure reader of the upstream packages and the test stays a real differential.
 //
-// Moca (2288), Citrea (4114) and Fluent (25363) are deliberately absent: safe-deployments has no
-// entry for them, so there is nothing here to compare against. Their MultiSend addresses are
-// asserted in Safe.sol on the strength of a direct `eth_getCode` check and are not covered by this
-// test. Pinning them here instead would only assert that two hand-edited files agree.
-const SUPPORTED_THIRD_PARTY_CHAIN_IDS = [1329, 1868, 98866];
+// Moca (2288), Nexus (3946), Citrea (4114) and Fluent (25363) are deliberately absent:
+// safe-deployments has no entry for them, so there is nothing here to compare against. Their
+// MultiSend addresses are asserted in Safe.sol on the strength of a direct `eth_getCode` check and
+// are not covered by this test. Pinning them here instead would only assert that two hand-edited
+// files agree.
+const SUPPORTED_THIRD_PARTY_CHAIN_IDS = [1329, 1868, 4153, 5888, 98866];
 const MULTI_SEND_VERSIONS = ["1.5.0", "1.4.1", "1.3.0"];
 
 const apiKitBundlePath = require.resolve("@safe-global/api-kit");
